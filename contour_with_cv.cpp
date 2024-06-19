@@ -13,25 +13,26 @@ int main() {
         return -1;
     }
 
-    cv::cuda::GpuMat d_frame, d_gray, d_edges;
-    cv::Mat frame, edges;
+    cv::cuda::GpuMat d_frame, d_gray, d_blur, d_edges;
+    cv::Mat edges;
     cv::Ptr<cv::cuda::CannyEdgeDetector> canny = cv::cuda::createCannyEdgeDetector(100.0, 200.0);
 
     while (true) {
         double start_time = (double)cv::getTickCount();
 
-        cap >> frame;
-        if (frame.empty()) {
+        cap >> edges; 
+        if (edges.empty()) {
             std::cerr << "Can't receive frame (stream end?). Exiting ..." << std::endl;
             break;
         }
 
-        d_frame.upload(frame);
+        d_frame.upload(edges);
 
-        cv::cuda::cvtColor(d_frame, d_gray, cv::COLOR_BGR2GRAY);
-        canny->detect(d_gray, d_edges);
+        cv::cuda::cvtColor(d_frame, d_gray, cv::COLOR_BGR2GRAY); 
+        cv::cuda::medianBlur(d_gray, d_blur, 3); 
+        canny->detect(d_blur, d_edges);
 
-        d_edges.download(edges);
+        d_edges.download(edges); 
 
         double end_time = (double)cv::getTickCount();
         double frame_time = (end_time - start_time) / cv::getTickFrequency();
@@ -39,7 +40,6 @@ int main() {
         cv::putText(edges, cv::format("Time: %.3f s", frame_time), cv::Point(10, 30),
                     cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
 
-        //cv::imshow("Original", frame);
         cv::imshow("Canny Edges", edges);
 
         if (cv::waitKey(1) == 'q') {
