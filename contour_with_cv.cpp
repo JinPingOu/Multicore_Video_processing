@@ -1,45 +1,39 @@
+
 #include <opencv2/opencv.hpp>
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaarithm.hpp>
-#include <opencv2/cudaimgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <iostream>
+#include <stdio.h>
+#include <time.h>
 
 int main() {
     cv::VideoCapture cap(0);
 
     if (!cap.isOpened()) {
-        std::cerr << "Cannot open camera" << std::endl;
+        printf("Cannot open camera\n");
         return -1;
     }
 
-    cv::cuda::GpuMat d_frame, d_gray, d_blur, d_edges;
-    cv::Mat edges;
-    cv::Ptr<cv::cuda::CannyEdgeDetector> canny = cv::cuda::createCannyEdgeDetector(100.0, 200.0);
+    cv::Mat frame, gray, edges;
+    char text[100];
 
     while (true) {
-        double start_time = (double)cv::getTickCount();
+        clock_t start_time = clock();
 
-        cap >> edges; 
-        if (edges.empty()) {
-            std::cerr << "Can't receive frame (stream end?). Exiting ..." << std::endl;
+        cap >> frame;
+
+        if (frame.empty()) {
+            printf("Can't receive frame (stream end?). Exiting ...\n");
             break;
         }
 
-        d_frame.upload(edges);
+        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+        cv::Canny(gray, edges, 100, 200);
 
-        cv::cuda::cvtColor(d_frame, d_gray, cv::COLOR_BGR2GRAY); 
-        cv::cuda::medianBlur(d_gray, d_blur, 3); 
-        canny->detect(d_blur, d_edges);
+        clock_t end_time = clock();
+        double frame_time = double(end_time - start_time) / CLOCKS_PER_SEC;
 
-        d_edges.download(edges); 
+        sprintf(text, "Time: %.3fs", frame_time);
+        cv::putText(edges, text, cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
 
-        double end_time = (double)cv::getTickCount();
-        double frame_time = (end_time - start_time) / cv::getTickFrequency();
-
-        cv::putText(edges, cv::format("Time: %.3f s", frame_time), cv::Point(10, 30),
-                    cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
-
+        // cv::imshow("Original", frame);
         cv::imshow("Canny Edges", edges);
 
         if (cv::waitKey(1) == 'q') {

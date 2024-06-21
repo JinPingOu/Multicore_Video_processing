@@ -1,5 +1,4 @@
-
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.10)
 project(multicore_final_project VERSION 0.1.0)
 
 include(CTest)
@@ -9,10 +8,10 @@ find_package(CUDA REQUIRED)
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-add_executable(contour_with_cv contour_with_cv.cpp)
+add_executable(contour_with_cuda contour_with_cuda.cpp)
 
 #target_link_libraries( multicore_final_project ${OpenCV_LIBS} )
-target_link_libraries(contour_with_cv ${OpenCV_LIBS})
+target_link_libraries(contour_with_cuda ${OpenCV_LIBS})
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
